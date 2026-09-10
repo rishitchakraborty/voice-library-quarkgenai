@@ -11,6 +11,7 @@ import {
   Download,
   Check,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { downloadAudioFile, convertWavToMp3 } from '@/lib/audio-encoder';
 
@@ -27,6 +28,8 @@ interface WaveformPlayerProps {
   compact?: boolean;
   onEnded?: () => void;
   primaryAction?: React.ReactNode;
+  onGenerateSpeech?: () => Promise<void>;
+  isGeneratingSpeech?: boolean;
 }
 
 export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
@@ -42,6 +45,8 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   compact = false,
   onEnded,
   primaryAction,
+  onGenerateSpeech,
+  isGeneratingSpeech = false,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -54,6 +59,27 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const [downloadingFormat, setDownloadingFormat] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [internalGenerating, setInternalGenerating] = useState(false);
+
+  const isGenerating = isGeneratingSpeech || internalGenerating;
+
+  const handleGenerate = useCallback(async () => {
+    if (!onGenerateSpeech || isGenerating) return;
+    try {
+      setInternalGenerating(true);
+      await onGenerateSpeech();
+      // Auto-play after generation completes
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.play().catch(() => {});
+        }
+      }, 300);
+    } catch (e) {
+      console.error('Speech generation failed:', e);
+    } finally {
+      setInternalGenerating(false);
+    }
+  }, [onGenerateSpeech, isGenerating]);
 
   // Default bars if peaks not provided
   const displayPeaks =
@@ -108,6 +134,13 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   }, [speed]);
 
   const togglePlay = useCallback(() => {
+    if (!audioUrl && !audioBlob) {
+      if (onGenerateSpeech) {
+        handleGenerate();
+      }
+      return;
+    }
+
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -118,7 +151,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     } else {
       audio.pause();
     }
-  }, []);
+  }, [audioUrl, audioBlob, onGenerateSpeech, handleGenerate]);
 
   const seekTo = (percent: number) => {
     const audio = audioRef.current;
@@ -256,14 +289,46 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {primaryAction}
 
+          {/* Dedicated Generate / Re-generate Speech Button */}
+          {onGenerateSpeech && (
+            <button
+              id={`${id}-generate-btn`}
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${
+                !audioUrl && !audioBlob
+                  ? 'bg-gradient-to-r from-[#0084FF] to-sky-500 hover:from-[#0070DD] hover:to-sky-600 text-white active:scale-95'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+              title="Generate speech using QuarkGen TTS v3"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 text-current animate-spin" />
+                  <span>Synthesizing...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-current" />
+                  <span>{!audioUrl && !audioBlob ? 'Generate' : 'Re-gen'}</span>
+                </>
+              )}
+            </button>
+          )}
+
           {/* Download Dropdown */}
           <div className="relative">
             <button
               id={`${id}-download-btn`}
-              onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-              disabled={!audioUrl && !audioBlob}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors disabled:opacity-50"
-              title="Download audio clip"
+              onClick={() => {
+                if (!audioUrl && !audioBlob) {
+                  handleGenerate();
+                } else {
+                  setShowDownloadMenu(!showDownloadMenu);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition-colors"
+              title={!audioUrl && !audioBlob ? 'Click to generate audio first' : 'Download audio clip'}
             >
               {downloadSuccess ? (
                 <>
@@ -325,6 +390,52 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         className="group relative w-full h-16 sm:h-20 bg-slate-50/80 rounded-xl px-3 py-2 border border-slate-200/80 cursor-pointer select-none overflow-hidden flex items-center justify-between gap-1"
         title="Click or scrub to seek playback"
       >
+        {/* If no audio generated yet: show clear interactive banner overlay */}
+        {!audioUrl && !audioBlob && (
+          <div
+            className="absolute inset-0 z-20 flex items-center justify-between px-3 sm:px-4 bg-slate-900/50 backdrop-blur-[1.5px] rounded-xl text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGenerate();
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isGenerating ? 'bg-sky-400 animate-ping' : 'bg-amber-400'
+                }`}
+              />
+              <span className="text-xs font-semibold text-white/95">
+                {isGenerating ? 'Synthesizing voice...' : 'Speech not generated yet'}
+              </span>
+            </div>
+
+            {onGenerateSpeech && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGenerate();
+                }}
+                disabled={isGenerating}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0084FF] hover:bg-[#0070DD] text-white text-xs font-bold shadow-md transition-transform active:scale-95 disabled:opacity-70"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Generate Speech</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Progress Background Highlight */}
         <div
           className="absolute inset-y-0 left-0 bg-sky-500/10 transition-[width] duration-75 pointer-events-none"
@@ -370,10 +481,21 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           <button
             id={`${id}-play-toggle`}
             onClick={togglePlay}
-            className="w-10 h-10 rounded-full bg-[#0084FF] hover:bg-[#0070DD] text-white flex items-center justify-center shadow-sm transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
-            title={isPlaying ? 'Pause' : 'Play'}
+            disabled={isGenerating}
+            className="w-10 h-10 rounded-full bg-[#0084FF] hover:bg-[#0070DD] text-white flex items-center justify-center shadow-sm transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-400/40 disabled:opacity-75"
+            title={
+              isGenerating
+                ? 'Synthesizing voice...'
+                : !audioUrl && !audioBlob
+                ? 'Generate and Play Speech'
+                : isPlaying
+                ? 'Pause'
+                : 'Play'
+            }
           >
-            {isPlaying ? (
+            {isGenerating ? (
+              <RefreshCw className="w-4 h-4 animate-spin text-white" />
+            ) : isPlaying ? (
               <Pause className="w-4 h-4 fill-white" />
             ) : (
               <Play className="w-4 h-4 fill-white ml-0.5" />

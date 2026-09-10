@@ -1,4 +1,5 @@
-import * as lamejs from 'lamejs';
+// Pure JS Lame encoder bundle that reliably works in browser without missing globals
+import lameModule from './vendor-lame.js';
 
 /**
  * Extracts normalized peaks (0.05 to 1.0) from an AudioBuffer for waveform visualization.
@@ -53,27 +54,133 @@ export function generateSyntheticWaveform(bars = 64, seed = 42): number[] {
 }
 
 /**
- * Converts a WAV ArrayBuffer to MP3 Blob using lamejs in the browser.
+ * Direct parser for 16-bit PCM WAV to extract samples without requiring AudioContext
+ */
+function parseWavDirect(buffer: ArrayBuffer): {
+  channels: number;
+  sampleRate: number;
+  leftChannel: Int16Array;
+  rightChannel?: Int16Array;
+} | null {
+  try {
+    const view = new DataView(buffer);
+    if (view.byteLength < 44) return null;
+
+    // Check RIFF header
+    const riff = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+    if (riff !== 'RIFF') return null;
+
+    const channels = view.getUint16(22, true);
+    const sampleRate = view.getUint32(24, true);
+    const bitsPerSample = view.getUint16(34, true);
+
+    if (bitsPerSample !== 16) return null;
+
+    // Locate "data" chunk
+    let offset = 12;
+    while (offset < buffer.byteLength - 8) {
+      const chunkId = String.fromCharCode(
+        view.getUint8(offset),
+        view.getUint8(offset + 1),
+        view.getUint8(offset + 2),
+        view.getUint8(offset + 3)
+      );
+      const chunkSize = view.getUint32(offset + 4, true);
+      if (chunkId === 'data') {
+        const dataOffset = offset + 8;
+        const totalSamples = Math.floor(chunkSize / 2);
+        const pcm16 = new Int16Array(buffer.slice(dataOffset, dataOffset + chunkSize));
+
+        if (channels === 1) {
+          return { channels: 1, sampleRate, leftChannel: pcm16 };
+        } else if (channels === 2) {
+          const numPairs = Math.floor(totalSamples / 2);
+          const left = new Int16Array(numPairs);
+          const right = new Int16Array(numPairs);
+          for (let i = 0; i < numPairs; i++) {
+            left[i] = pcm16[i * 2];
+            right[i] = pcm16[i * 2 + 1];
+          }
+          return { channels: 2, sampleRate, leftChannel: left, rightChannel: right };
+        }
+        return null;
+      }
+      offset += 8 + chunkSize;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Converts a WAV ArrayBuffer to MP3 Blob using LAME encoder in the browser.
  */
 export async function convertWavToMp3(wavArrayBuffer: ArrayBuffer): Promise<Blob> {
-  // Use Web Audio API to decode WAV into PCM samples
-  const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const lameTyped = lameModule as unknown as {
+    Mp3Encoder?: new (channels: number, sampleRate: number, kbps: number) => {
+      encodeBuffer: (left: Int16Array, right?: Int16Array) => Int8Array | Uint8Array;
+      flush: () => Int8Array | Uint8Array;
+    };
+    default?: {
+      Mp3Encoder?: new (channels: number, sampleRate: number, kbps: number) => {
+        encodeBuffer: (left: Int16Array, right?: Int16Array) => Int8Array | Uint8Array;
+        flush: () => Int8Array | Uint8Array;
+      };
+    };
+  };
+  const Mp3Encoder = lameTyped.Mp3Encoder || lameTyped.default?.Mp3Encoder;
+  if (!Mp3Encoder) {
+    throw new Error('MP3 encoder module could not be initialized.');
+  }
+
+  // 1. Try fast and direct WAV parsing first (guaranteed zero AudioContext restrictions)
+  const directWav = parseWavDirect(wavArrayBuffer);
+  if (directWav && directWav.leftChannel.length > 0) {
+    const kbps = 128;
+    const encoder = new Mp3Encoder(directWav.channels, directWav.sampleRate, kbps);
+    const sampleBlockSize = 1152;
+    const mp3Chunks: Uint8Array[] = [];
+
+    for (let i = 0; i < directWav.leftChannel.length; i += sampleBlockSize) {
+      const leftChunk = directWav.leftChannel.subarray(i, i + sampleBlockSize);
+      const rightChunk = directWav.rightChannel
+        ? directWav.rightChannel.subarray(i, i + sampleBlockSize)
+        : undefined;
+
+      const mp3buf = encoder.encodeBuffer(leftChunk, rightChunk);
+      if (mp3buf && mp3buf.length > 0) {
+        mp3Chunks.push(new Uint8Array(mp3buf));
+      }
+    }
+
+    const endBuf = encoder.flush();
+    if (endBuf && endBuf.length > 0) {
+      mp3Chunks.push(new Uint8Array(endBuf));
+    }
+
+    return new Blob(mp3Chunks as BlobPart[], { type: 'audio/mp3' });
+  }
+
+  // 2. Fallback: Use Web Audio API to decode WAV into PCM samples
+  const AudioCtxClass =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const audioCtx = new AudioCtxClass();
 
   try {
     const audioBuffer = await audioCtx.decodeAudioData(wavArrayBuffer.slice(0));
     const channels = audioBuffer.numberOfChannels;
     const sampleRate = audioBuffer.sampleRate;
-    const kbps = 128; // Standard voice quality MP3
+    const kbps = 128;
 
-    const mp3Encoder = new lamejs.Mp3Encoder(channels, sampleRate, kbps);
+    const mp3Encoder = new Mp3Encoder(channels, sampleRate, kbps);
     const mp3Data: Uint8Array[] = [];
 
-    // Convert Float32Array to Int16Array
     const leftChannel = floatToInt16(audioBuffer.getChannelData(0));
     const rightChannel = channels > 1 ? floatToInt16(audioBuffer.getChannelData(1)) : undefined;
 
-    const sampleBlockSize = 1152; // Lame standard chunk size
+    const sampleBlockSize = 1152;
     const numSamples = leftChannel.length;
 
     for (let i = 0; i < numSamples; i += sampleBlockSize) {
@@ -81,13 +188,13 @@ export async function convertWavToMp3(wavArrayBuffer: ArrayBuffer): Promise<Blob
       const rightChunk = rightChannel ? rightChannel.subarray(i, i + sampleBlockSize) : undefined;
 
       const mp3buf = mp3Encoder.encodeBuffer(leftChunk, rightChunk);
-      if (mp3buf.length > 0) {
+      if (mp3buf && mp3buf.length > 0) {
         mp3Data.push(new Uint8Array(mp3buf));
       }
     }
 
     const endBuf = mp3Encoder.flush();
-    if (endBuf.length > 0) {
+    if (endBuf && endBuf.length > 0) {
       mp3Data.push(new Uint8Array(endBuf));
     }
 

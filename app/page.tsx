@@ -40,6 +40,7 @@ import { VoiceRecorderModal } from '@/components/VoiceRecorderModal';
 import { QuarkGenLogo } from '@/components/QuarkGenLogo';
 import { QuarkGenBackground } from '@/components/QuarkGenBackground';
 import { useInspectProtection } from '@/hooks/useInspectProtection';
+import { blobToBase64, extractWaveformPeaks } from '@/lib/audio-encoder';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function VoiceLibraryPage() {
@@ -153,8 +154,108 @@ export default function VoiceLibraryPage() {
     updateClips(updated);
   };
 
+  // Generate audio for a specific clip in the library
+  const handleGenerateClipAudio = async (clipId: string): Promise<void> => {
+    const targetClip = clips.find((c) => c.id === clipId);
+    if (!targetClip) return;
+
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-quarkgen-client': 'v3-enterprise-secure',
+        },
+        body: JSON.stringify({
+          input: targetClip.promptText,
+          voice: targetClip.language,
+          voice_name: targetClip.voiceName,
+          speed: targetClip.speed || currentSpeed,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`TTS generation failed with HTTP ${res.status}`);
+      }
+
+      const audioBlob = await res.blob();
+      const audioBlobUrl = URL.createObjectURL(audioBlob);
+      const audioBase64 = await blobToBase64(audioBlob);
+
+      // Compute actual peaks & duration if Web Audio API is available
+      let peaks = targetClip.peaks;
+      let duration = targetClip.duration;
+      try {
+        const AudioCtxClass =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtxClass) {
+          const ctx = new AudioCtxClass();
+          const buffer = await audioBlob.arrayBuffer();
+          const decoded = await ctx.decodeAudioData(buffer);
+          duration = Math.round(decoded.duration * 10) / 10;
+          peaks = extractWaveformPeaks(decoded, 64);
+          await ctx.close();
+        }
+      } catch (e) {
+        console.warn('Peak extraction fallback:', e);
+      }
+
+      const updated = clips.map((c) =>
+        c.id === clipId
+          ? {
+              ...c,
+              audioBlobUrl,
+              audioBase64,
+              peaks,
+              duration,
+              fileSizeBytes: audioBlob.size,
+            }
+          : c
+      );
+      updateClips(updated);
+      setSyncToast(`Synthesized speech for "${targetClip.title}"`);
+      setTimeout(() => setSyncToast(null), 3000);
+    } catch (err) {
+      console.error('Failed to generate speech for clip:', err);
+      setSyncToast(`Failed to generate speech: ${(err as Error).message}`);
+      setTimeout(() => setSyncToast(null), 4000);
+      throw err;
+    }
+  };
+
+  // State for batch synthesis of all pending clips
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [generatingProgress, setGeneratingProgress] = useState<{ current: number; total: number } | null>(null);
+
+  const pendingAudioCount = useMemo(
+    () => clips.filter((c) => !c.audioBlobUrl && !c.audioBase64).length,
+    [clips]
+  );
+
+  const handleGenerateAllPending = async () => {
+    const pendingClips = clips.filter((c) => !c.audioBlobUrl && !c.audioBase64);
+    if (pendingClips.length === 0) return;
+
+    setIsGeneratingAll(true);
+    setGeneratingProgress({ current: 0, total: pendingClips.length });
+
+    for (let i = 0; i < pendingClips.length; i++) {
+      setGeneratingProgress({ current: i + 1, total: pendingClips.length });
+      try {
+        await handleGenerateClipAudio(pendingClips[i].id);
+      } catch (err) {
+        console.error(`Error generating clip ${pendingClips[i].title}:`, err);
+      }
+    }
+
+    setIsGeneratingAll(false);
+    setGeneratingProgress(null);
+  };
+
   // Reset to initial seed clips
   const handleResetToSeedClips = () => {
+    localStorage.removeItem('quarkgen_voice_clips_v2');
     localStorage.removeItem('vocalis_voice_clips_v1');
     const fresh = getStoredClips();
     setClips(fresh);
@@ -395,7 +496,31 @@ export default function VoiceLibraryPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
+            {pendingAudioCount > 0 && (
+              <button
+                id="generate-all-pending-btn"
+                onClick={handleGenerateAllPending}
+                disabled={isGeneratingAll}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#0084FF] to-sky-500 hover:from-[#0070DD] hover:to-sky-600 text-white font-bold shadow-xs transition-all active:scale-95 disabled:opacity-75"
+                title="Synthesize audio for all clips in the library using QuarkGen TTS"
+              >
+                {isGeneratingAll ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                    <span>
+                      Synthesizing {generatingProgress?.current}/{generatingProgress?.total}...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-sky-200" />
+                    <span>Generate All ({pendingAudioCount} Pending)</span>
+                  </>
+                )}
+              </button>
+            )}
+
             <span className="px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-xs border border-slate-200">
               Total Clips: <strong className="text-[#0084FF]">{clips.length}</strong>
             </span>
@@ -460,6 +585,7 @@ export default function VoiceLibraryPage() {
                       onDeleteClip={handleDeleteClip}
                       onAddTag={handleAddTag}
                       onRemoveTag={handleRemoveTag}
+                      onGenerateAudio={handleGenerateClipAudio}
                     />
                   </motion.div>
                 ))}

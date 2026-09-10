@@ -22,6 +22,7 @@ interface ClipCardProps {
   onDeleteClip: (id: string) => void;
   onAddTag: (clipId: string, newTag: string) => void;
   onRemoveTag: (clipId: string, tagToRemove: string) => void;
+  onGenerateAudio?: (clipId: string) => Promise<void>;
 }
 
 export const ClipCard: React.FC<ClipCardProps> = ({
@@ -30,6 +31,7 @@ export const ClipCard: React.FC<ClipCardProps> = ({
   onDeleteClip,
   onAddTag,
   onRemoveTag,
+  onGenerateAudio,
 }) => {
   const [showFullTranscript, setShowFullTranscript] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
@@ -243,6 +245,7 @@ export const ClipCard: React.FC<ClipCardProps> = ({
           speed={clip.speed}
           duration={clip.duration}
           compact={true}
+          onGenerateSpeech={onGenerateAudio ? () => onGenerateAudio(clip.id) : undefined}
         />
       </div>
 

@@ -24,6 +24,11 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" type="image/png" sizes="260x260" href="/quarkIcon.png" />
+        <link rel="shortcut icon" href="/quarkIcon.png" />
+        <link rel="apple-touch-icon" href="/quarkIcon.png" />
+      </head>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

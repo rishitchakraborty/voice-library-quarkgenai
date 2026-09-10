@@ -4,11 +4,11 @@ import {
   HARDCODED_TEST_LINE_ENGLISH,
   HARDCODED_TEST_LINE_BENGALI,
 } from './voice-data';
-import { generateSyntheticWaveform } from './audio-encoder';
+import { generateSyntheticWaveform, base64ToBlob } from './audio-encoder';
 
-const CLIPS_STORAGE_KEY = 'vocalis_voice_clips_v1';
-const SETTINGS_STORAGE_KEY = 'vocalis_app_settings_v1';
-const LAST_SYNC_KEY = 'vocalis_last_cloud_sync';
+const CLIPS_STORAGE_KEY = 'quarkgen_voice_clips_v2';
+const SETTINGS_STORAGE_KEY = 'quarkgen_app_settings_v2';
+const LAST_SYNC_KEY = 'quarkgen_last_cloud_sync';
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   defaultSpeed: 1.0,
@@ -97,7 +97,23 @@ export function getStoredClips(): AudioClip[] {
       return SEED_CLIPS;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_CLIPS;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((c: AudioClip) => {
+        if (c.audioBase64 && !c.audioBlobUrl) {
+          try {
+            const blob = base64ToBlob(c.audioBase64);
+            return {
+              ...c,
+              audioBlobUrl: URL.createObjectURL(blob),
+            };
+          } catch {
+            return c;
+          }
+        }
+        return c;
+      });
+    }
+    return SEED_CLIPS;
   } catch (error) {
     console.error('Failed to load clips from storage:', error);
     return SEED_CLIPS;
