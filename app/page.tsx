@@ -353,7 +353,7 @@ export default function VoiceLibraryPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Brand & Studio Title with Official QuarkGen Logo */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <QuarkGenLogo size={32} priority />
+            <QuarkGenLogo size={38} priority />
             <div className="h-7 w-px bg-slate-200 hidden sm:block" />
             <div>
               <div className="flex items-center gap-2">

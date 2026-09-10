@@ -14,7 +14,7 @@ interface QuarkGenLogoProps {
  */
 export const QuarkGenLogo: React.FC<QuarkGenLogoProps> = ({
   className = '',
-  size = 34,
+  size = 36,
   priority = true,
   iconOnly = false,
 }) => {
@@ -22,11 +22,12 @@ export const QuarkGenLogo: React.FC<QuarkGenLogoProps> = ({
     return (
       <div className={`inline-flex items-center shrink-0 ${className}`}>
         <Image
+          id="quarkgen-official-icon"
           src="/quarkIcon.png"
           alt="QuarkGen"
           width={size}
           height={size}
-          className="object-contain"
+          className="object-contain select-none"
           priority={priority}
           unoptimized
         />
@@ -40,12 +41,13 @@ export const QuarkGenLogo: React.FC<QuarkGenLogoProps> = ({
   return (
     <div className={`inline-flex items-center shrink-0 ${className}`}>
       <Image
+        id="quarkgen-official-logo"
         src="/quarkLogo.png"
         alt="QuarkGen"
         width={width}
         height={size}
         style={{ height: `${size}px`, width: 'auto' }}
-        className="object-contain"
+        className="object-contain select-none max-h-full"
         priority={priority}
         unoptimized
       />
