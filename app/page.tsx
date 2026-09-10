@@ -40,6 +40,7 @@ import { VoiceRecorderModal } from '@/components/VoiceRecorderModal';
 import { QuarkGenLogo } from '@/components/QuarkGenLogo';
 import { QuarkGenBackground } from '@/components/QuarkGenBackground';
 import { useInspectProtection } from '@/hooks/useInspectProtection';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function VoiceLibraryPage() {
   const [clips, setClips] = useState<AudioClip[]>(() => getStoredClips());
@@ -51,6 +52,24 @@ export default function VoiceLibraryPage() {
   const [lastSyncTime, setLastSyncTimeState] = useState<string>(() => getLastCloudSyncTime());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncToast, setSyncToast] = useState<string | null>(null);
+
+  // Subscribe to storage synchronization for external tab/window updates
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'quarkgen_audio_clips_v1') {
+        try {
+          const stored = getStoredClips();
+          if (stored && stored.length > 0) {
+            setClips(stored);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Enterprise Inspect and Route Protection Guard
   const { securityNotice, dismissNotice } = useInspectProtection();
@@ -231,9 +250,10 @@ export default function VoiceLibraryPage() {
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Brand & Studio Title with QuarkGen Logo */}
-          <div className="flex items-center gap-3.5">
-            <QuarkGenLogo size={36} showText={false} />
+          {/* Brand & Studio Title with Official QuarkGen Logo */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <QuarkGenLogo size={32} priority />
+            <div className="h-7 w-px bg-slate-200 hidden sm:block" />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
@@ -413,51 +433,79 @@ export default function VoiceLibraryPage() {
         />
 
         {/* Clips Grid / Empty State */}
-        {filteredClips.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredClips.map((clip) => (
-              <ClipCard
-                key={clip.id}
-                clip={clip}
-                onToggleFavorite={handleToggleFavorite}
-                onDeleteClip={handleDeleteClip}
-                onAddTag={handleAddTag}
-                onRemoveTag={handleRemoveTag}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl border border-slate-200 p-8 text-center max-w-md mx-auto my-8 shadow-xs">
-            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#0084FF] flex items-center justify-center mx-auto mb-3">
-              <Search className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">
-              No matching voice clips found
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Try modifying your search keywords or resetting active language and tag filters.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedLanguageFilter('all');
-                setSelectedVoiceFilter('all');
-                setSelectedTagFilter(null);
-                setOnlyFavorites(false);
-              }}
-              className="px-4 py-2 rounded-xl bg-[#0084FF] text-white text-xs font-semibold hover:bg-[#0070DD] transition-colors shadow-xs"
+        <AnimatePresence mode="popLayout">
+          {filteredClips.length > 0 ? (
+            <motion.div
+              layout
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
-              Reset All Filters
-            </button>
-          </div>
-        )}
+              <AnimatePresence mode="popLayout" initial={false}>
+                {filteredClips.map((clip, index) => (
+                  <motion.div
+                    key={clip.id}
+                    layout="position"
+                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -8, transition: { duration: 0.18 } }}
+                    transition={{
+                      duration: 0.32,
+                      ease: [0.16, 1, 0.3, 1],
+                      delay: Math.min(index * 0.03, 0.18),
+                    }}
+                    className="h-full flex flex-col"
+                  >
+                    <ClipCard
+                      clip={clip}
+                      onToggleFavorite={handleToggleFavorite}
+                      onDeleteClip={handleDeleteClip}
+                      onAddTag={handleAddTag}
+                      onRemoveTag={handleRemoveTag}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty-library-state"
+              layout
+              initial={{ opacity: 0, scale: 0.97, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="bg-white/95 backdrop-blur-sm rounded-3xl border border-slate-200 p-8 text-center max-w-md mx-auto my-8 shadow-xs"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#0084FF] flex items-center justify-center mx-auto mb-3">
+                <Search className="w-6 h-6" />
+              </div>
+              <h3 className="font-bold text-slate-900 text-base mb-1">
+                No matching voice clips found
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Try modifying your search keywords or resetting active language and tag filters.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedLanguageFilter('all');
+                  setSelectedVoiceFilter('all');
+                  setSelectedTagFilter(null);
+                  setOnlyFavorites(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-[#0084FF] text-white text-xs font-semibold hover:bg-[#0070DD] transition-colors shadow-xs"
+              >
+                Reset All Filters
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Global Footer with Developed by QuarkGen.AI attribution */}
       <footer className="relative z-10 mt-16 border-t border-slate-200/80 bg-white/90 backdrop-blur-md py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="flex items-center gap-3">
-            <QuarkGenLogo size={24} showText={true} />
+            <QuarkGenLogo size={24} />
             <span className="hidden sm:inline text-slate-300">|</span>
             <span className="text-slate-600 font-medium">
               Developed by <strong className="text-[#0084FF] font-semibold">QuarkGen.AI</strong>

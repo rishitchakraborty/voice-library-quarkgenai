@@ -277,7 +277,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-stone-500">Last Synced:</span>
-                <span className="text-stone-600">
+                <span suppressHydrationWarning className="text-stone-600">
                   {new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

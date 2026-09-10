@@ -63,7 +63,7 @@ export const ClipCard: React.FC<ClipCardProps> = ({
   return (
     <div
       id={`clip-card-${clip.id}`}
-      className="group bg-white rounded-2xl border border-stone-200 hover:border-stone-300 transition-all p-4 sm:p-5 shadow-xs flex flex-col justify-between relative"
+      className="group bg-white rounded-2xl border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all duration-200 p-4 sm:p-5 shadow-xs flex flex-col justify-between relative h-full"
     >
       {/* Top Details & Tags */}
       <div>
@@ -248,7 +248,7 @@ export const ClipCard: React.FC<ClipCardProps> = ({
 
       {/* Meta Footer */}
       <div className="flex items-center justify-between text-[11px] text-stone-400 pt-3 mt-3 border-t border-stone-100">
-        <span className="flex items-center gap-1">
+        <span suppressHydrationWarning className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />
           {formattedDate}
         </span>

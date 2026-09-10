@@ -24,7 +24,6 @@ import {
 } from '@/lib/voice-data';
 import { extractWaveformPeaks, generateSyntheticWaveform } from '@/lib/audio-encoder';
 import { WaveformPlayer } from './WaveformPlayer';
-import { QuarkGenLogo } from './QuarkGenLogo';
 
 interface TTSGeneratorProps {
   onSaveToLibrary: (clip: AudioClip) => void;
