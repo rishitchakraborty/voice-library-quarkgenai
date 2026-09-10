@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 280" width="940" height="280" fill="none">
+  <defs>
+    <!-- Solid exact colors from QuarkGen brand -->
+    <!-- Top Face: Vibrant Cerulean Blue -->
+    <linearGradient id="qg-top-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0094FF" />
+      <stop offset="100%" stop-color="#0080EA" />
+    </linearGradient>
+    <!-- Side Face: Deep Shadow Blue -->
+    <linearGradient id="qg-side-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#006EB8" />
+      <stop offset="100%" stop-color="#005B9C" />
+    </linearGradient>
+  </defs>
+
+  <!-- 3D Isometric Triskelion Mark -->
+  <g id="quarkgen-emblem" transform="translate(142, 140)">
+    <!-- 3 Identical Isometric Arms at 120-degree intervals -->
+    <!-- Arm 1: Top-Left (240 deg) -->
+    <g transform="rotate(240)">
+      <!-- Outer Block -->
+      <polygon points="-52,-96 -14,-118 26,-95 -12,-73" fill="url(#qg-top-grad)" />
+      <polygon points="-12,-73 26,-95 26,-66 -12,-44" fill="url(#qg-side-grad)" />
+
+      <!-- Inner Block -->
+      <polygon points="-12,-38 26,-60 26,-15 -12,7" fill="url(#qg-top-grad)" />
+      <polygon points="-12,7 26,-15 26,14 -12,36" fill="url(#qg-side-grad)" />
+    </g>
+
+    <!-- Arm 2: Right (0 deg) -->
+    <g transform="rotate(0)">
+      <!-- Outer Block -->
+      <polygon points="-52,-96 -14,-118 26,-95 -12,-73" fill="url(#qg-top-grad)" />
+      <polygon points="-12,-73 26,-95 26,-66 -12,-44" fill="url(#qg-side-grad)" />
+
+      <!-- Inner Block -->
+      <polygon points="-12,-38 26,-60 26,-15 -12,7" fill="url(#qg-top-grad)" />
+      <polygon points="-12,7 26,-15 26,14 -12,36" fill="url(#qg-side-grad)" />
+    </g>
+
+    <!-- Arm 3: Bottom-Left (120 deg) -->
+    <g transform="rotate(120)">
+      <!-- Outer Block -->
+      <polygon points="-52,-96 -14,-118 26,-95 -12,-73" fill="url(#qg-top-grad)" />
+      <polygon points="-12,-73 26,-95 26,-66 -12,-44" fill="url(#qg-side-grad)" />
+
+      <!-- Inner Block -->
+      <polygon points="-12,-38 26,-60 26,-15 -12,7" fill="url(#qg-top-grad)" />
+      <polygon points="-12,7 26,-15 26,14 -12,36" fill="url(#qg-side-grad)" />
+    </g>
+  </g>
+
+  <!-- Wordmark 'QuarkGen' in heavy geometric typography matching logo exactly -->
+  <g id="quarkgen-wordmark" transform="translate(305, 172)">
+    <text font-family="'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          font-size="112"
+          font-weight="800"
+          letter-spacing="-2.5px"
+          fill="#0A0D14">QuarkGen</text>
+  </g>
+</svg>

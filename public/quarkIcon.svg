@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" width="260" height="260" fill="none">
+  <defs>
+    <linearGradient id="qg-icon-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0094FF" />
+      <stop offset="100%" stop-color="#0080EA" />
+    </linearGradient>
+    <linearGradient id="qg-icon-side" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#006EB8" />
+      <stop offset="100%" stop-color="#005B9C" />
+    </linearGradient>
+  </defs>
+
+  <g id="quarkgen-emblem" transform="translate(130, 130)">
+    <g transform="rotate(240)">
+      <polygon points="-52,-96 -14,-118 26,-95 -12,-73" fill="url(#qg-icon-top)" />
+      <polygon points="-12,-73 26,-95 26,-66 -12,-44" fill="url(#qg-icon-side)" />
+
+      <polygon points="-12,-38 26,-60 26,-15 -12,7" fill="url(#qg-icon-top)" />
+      <polygon points="-12,7 26,-15 26,14 -12,36" fill="url(#qg-icon-side)" />
+    </g>
+
+    <g transform="rotate(0)">
+      <polygon points="-52,-96 -14,-118 26,-95 -12,-73" fill="url(#qg-icon-top)" />
+      <polygon points="-12,-73 26,-95 26,-66 -12,-44" fill="url(#qg-icon-side)" />
+
+      <polygon points="-12,-38 26,-60 26,-15 -12,7" fill="url(#qg-icon-top)" />
+      <polygon points="-12,7 26,-15 26,14 -12,36" fill="url(#qg-icon-side)" />
+    </g>
+
+    <g transform="rotate(120)">
+      <polygon points="-52,-96 -14,-118 26,-95 -12,-73" fill="url(#qg-icon-top)" />
+      <polygon points="-12,-73 26,-95 26,-66 -12,-44" fill="url(#qg-icon-side)" />
+
+      <polygon points="-12,-38 26,-60 26,-15 -12,7" fill="url(#qg-icon-top)" />
+      <polygon points="-12,7 26,-15 26,14 -12,36" fill="url(#qg-icon-side)" />
+    </g>
+  </g>
+</svg>
