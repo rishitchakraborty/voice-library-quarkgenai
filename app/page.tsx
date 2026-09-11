@@ -365,7 +365,14 @@ export default function VoiceLibraryPage() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 hidden sm:flex items-center gap-1.5">
-                <span className="font-semibold text-[#0084FF]">Developed by QuarkGen.AI</span>
+                <a
+                  href="https://www.quarkgen.ai/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-[#0084FF] hover:underline hover:text-[#0070DD] transition-colors"
+                >
+                  Developed by QuarkGen AI
+                </a>
                 <span>•</span>
                 <span>Hindi • English • Bengali • 18+ Global Languages</span>
               </p>
@@ -633,9 +640,14 @@ export default function VoiceLibraryPage() {
           <div className="flex items-center gap-3">
             <QuarkGenLogo size={24} />
             <span className="hidden sm:inline text-slate-300">|</span>
-            <span className="text-slate-600 font-medium">
-              Developed by <strong className="text-[#0084FF] font-semibold">QuarkGen.AI</strong>
-            </span>
+            <a
+              href="https://www.quarkgen.ai/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-600 font-medium hover:text-[#0084FF] transition-colors"
+            >
+              Developed by <strong className="text-[#0084FF] font-semibold hover:underline">QuarkGen AI</strong>
+            </a>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-slate-500">

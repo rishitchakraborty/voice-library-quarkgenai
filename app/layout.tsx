@@ -3,7 +3,7 @@ import './globals.css'; // Global styles
 
 export const metadata: Metadata = {
   title: 'QuarkGen.AI | Multilingual Voice Gen AI Studio & Library',
-  description: 'QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio & Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen.AI',
+  description: 'QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio & Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen AI',
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'QuarkGen.AI | Multilingual Voice Gen AI Studio & Library',
-    description: 'QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio & Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen.AI',
+    description: 'QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio & Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen AI',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'QuarkGen.AI | Multilingual Voice Gen AI Studio & Library',
-    description: 'QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio & Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen.AI',
+    description: 'QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio & Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen AI',
   },
 };
 

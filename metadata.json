@@ -1,6 +1,1 @@
-{
-  "name": "QuarkGen.AI Voice Library & Studio",
-  "description": "QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio & Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen.AI",
-  "requestFramePermissions": ["microphone"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
+{"name":"QuarkGen.AI Voice Library \u0026 Studio","description":"QuarkGen.AI Enterprise Multilingual Voice Gen AI Studio \u0026 Audio Library. Powered by Private Enterprise LLMs, ultra-low latency TTS, 18+ global languages, and waveform audio player. Developed by QuarkGen AI","requestFramePermissions":["microphone"],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}

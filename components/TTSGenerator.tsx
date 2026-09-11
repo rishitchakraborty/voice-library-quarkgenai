@@ -240,10 +240,16 @@ export const TTSGenerator: React.FC<TTSGeneratorProps> = ({
             <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
               QuarkGen Multilingual Voice Gen AI Studio
             </h2>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+            <a
+              href="https://www.quarkgen.ai/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 hover:text-sky-800 transition-colors"
+              title="Visit QuarkGen AI"
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-              Developed by QuarkGen.AI
-            </span>
+              Developed by QuarkGen AI
+            </a>
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Enterprise Private LLM Voice Engine • Fast multilingual generation across Hindi, English, Bengali & 18+ Global Languages
