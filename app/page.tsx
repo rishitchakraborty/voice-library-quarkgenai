@@ -89,6 +89,11 @@ export default function VoiceLibraryPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isVoiceProfilesOpen, setIsVoiceProfilesOpen] = useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = useState(false);
+  const [externalVoiceSelection, setExternalVoiceSelection] = useState<{
+    voiceName: string;
+    language: 'hi' | 'en' | 'bn';
+    promptText: string;
+  } | null>(null);
 
   // Sync clips changes to localStorage
   const updateClips = useCallback((newClips: AudioClip[]) => {
@@ -487,6 +492,7 @@ export default function VoiceLibraryPage() {
             saveStoredSettings({ ...settings, defaultSpeed: spd });
           }}
           maxWordsLimit={settings.maxWordsLimit || 60}
+          externalVoiceSelection={externalVoiceSelection}
         />
 
         {/* Section 2: Voice Library Hub */}
@@ -688,7 +694,11 @@ export default function VoiceLibraryPage() {
         isOpen={isVoiceProfilesOpen}
         onClose={() => setIsVoiceProfilesOpen(false)}
         onSelectVoiceForTest={(voiceName, lang, testLine) => {
-          // Scroll up to TTS generator
+          setExternalVoiceSelection({
+            voiceName,
+            language: lang as 'hi' | 'en' | 'bn',
+            promptText: testLine,
+          });
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />

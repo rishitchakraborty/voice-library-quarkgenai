@@ -18,9 +18,12 @@ import { AudioClip, VoiceProfile } from '@/lib/types';
 import {
   VOICE_PROFILES,
   ACTIVE_LANGUAGES,
+  HARDCODED_TEST_LINE_HINDI_FEMALE,
+  HARDCODED_TEST_LINE_HINDI_MALE,
   HARDCODED_TEST_LINE_HINDI,
   HARDCODED_TEST_LINE_ENGLISH,
   HARDCODED_TEST_LINE_BENGALI,
+  convertHindiGenderGrammar,
 } from '@/lib/voice-data';
 import { extractWaveformPeaks, generateSyntheticWaveform } from '@/lib/audio-encoder';
 import { WaveformPlayer } from './WaveformPlayer';
@@ -32,6 +35,11 @@ interface TTSGeneratorProps {
   currentSpeed: number;
   onSpeedChange: (speed: number) => void;
   maxWordsLimit?: number;
+  externalVoiceSelection?: {
+    voiceName: string;
+    language: 'hi' | 'en' | 'bn';
+    promptText: string;
+  } | null;
 }
 
 export const TTSGenerator: React.FC<TTSGeneratorProps> = ({
@@ -41,6 +49,7 @@ export const TTSGenerator: React.FC<TTSGeneratorProps> = ({
   currentSpeed,
   onSpeedChange,
   maxWordsLimit = 60,
+  externalVoiceSelection,
 }) => {
   const componentId = useId();
   const [selectedLanguage, setSelectedLanguage] = useState<'hi' | 'en' | 'bn'>('hi');
@@ -66,12 +75,72 @@ export const TTSGenerator: React.FC<TTSGeneratorProps> = ({
     v.supportedLanguages.includes(selectedLanguage)
   );
 
+  useEffect(() => {
+    if (externalVoiceSelection) {
+      setSelectedVoiceName(externalVoiceSelection.voiceName);
+      setSelectedLanguage(externalVoiceSelection.language);
+      setPromptInput(externalVoiceSelection.promptText);
+    }
+  }, [externalVoiceSelection]);
+
+  // Voice Persona selection handler: updates target voice, switches prompt text and applies gender grammar
+  const handleVoiceSelect = (voice: VoiceProfile) => {
+    setSelectedVoiceName(voice.apiVoiceName);
+
+    // If the selected voice does not support current language, switch to its first supported language
+    let langToUse = selectedLanguage;
+    if (!voice.supportedLanguages.includes(selectedLanguage)) {
+      langToUse = voice.supportedLanguages[0] as 'hi' | 'en' | 'bn';
+      setSelectedLanguage(langToUse);
+    }
+
+    const tailoredSentence = voice.hardcodedTestSentence?.[langToUse];
+
+    // Check if the current prompt matches benchmark lines or is empty
+    const isDefaultOrBenchmark =
+      !promptInput.trim() ||
+      VOICE_PROFILES.some((p) => p.hardcodedTestSentence?.hi === promptInput.trim()) ||
+      promptInput.trim() === HARDCODED_TEST_LINE_HINDI_FEMALE ||
+      promptInput.trim() === HARDCODED_TEST_LINE_HINDI_MALE ||
+      VOICE_PROFILES.some((p) => p.hardcodedTestSentence?.en === promptInput.trim()) ||
+      VOICE_PROFILES.some((p) => p.hardcodedTestSentence?.bn === promptInput.trim());
+
+    if (isDefaultOrBenchmark && tailoredSentence) {
+      setPromptInput(tailoredSentence);
+    } else if (langToUse === 'hi') {
+      // If user has custom text in Hindi, convert its gender grammar to match the voice
+      const converted = convertHindiGenderGrammar(promptInput, voice.gender as 'Male' | 'Female');
+      setPromptInput(converted);
+    } else if (tailoredSentence) {
+      setPromptInput(tailoredSentence);
+    }
+
+    setGenerationError(null);
+  };
+
   const handleLanguageSelect = (lang: 'hi' | 'en' | 'bn') => {
     setSelectedLanguage(lang);
     const voicesForLang = VOICE_PROFILES.filter((v) => v.supportedLanguages.includes(lang));
+    let voiceToUse = selectedVoiceName;
     const stillSupported = voicesForLang.some((v) => v.apiVoiceName === selectedVoiceName);
     if (!stillSupported && voicesForLang.length > 0) {
-      setSelectedVoiceName(voicesForLang[0].apiVoiceName);
+      voiceToUse = voicesForLang[0].apiVoiceName;
+      setSelectedVoiceName(voiceToUse);
+    }
+
+    const activeVoice = VOICE_PROFILES.find((v) => v.apiVoiceName === voiceToUse);
+    if (activeVoice?.hardcodedTestSentence?.[lang]) {
+      setPromptInput(activeVoice.hardcodedTestSentence[lang]!);
+    } else if (lang === 'hi') {
+      const line =
+        activeVoice?.gender === 'Male'
+          ? HARDCODED_TEST_LINE_HINDI_MALE
+          : HARDCODED_TEST_LINE_HINDI_FEMALE;
+      setPromptInput(line);
+    } else if (lang === 'en') {
+      setPromptInput(HARDCODED_TEST_LINE_ENGLISH);
+    } else if (lang === 'bn') {
+      setPromptInput(HARDCODED_TEST_LINE_BENGALI);
     }
   };
 
@@ -81,19 +150,28 @@ export const TTSGenerator: React.FC<TTSGeneratorProps> = ({
   const isOverWordLimit = wordCount > maxWordsLimit;
   const wordsRemaining = maxWordsLimit - wordCount;
 
-  // Hardcoded test line loader
+  // Hardcoded test line loader respecting active voice gender
   const loadHardcodedTestLine = (lang: 'hi' | 'en' | 'bn' = selectedLanguage) => {
     setSelectedLanguage(lang);
+    let voiceToUse = selectedVoiceName;
+    if (lang === 'bn' && voiceToUse !== 'rishi' && voiceToUse !== 'suhana') {
+      voiceToUse = 'rishi';
+      setSelectedVoiceName('rishi');
+    }
+    const activeVoice = VOICE_PROFILES.find((v) => v.apiVoiceName === voiceToUse);
+    const isMale = activeVoice?.gender === 'Male';
+
     if (lang === 'hi') {
-      setPromptInput(HARDCODED_TEST_LINE_HINDI);
+      const voiceSentence = activeVoice?.hardcodedTestSentence?.hi;
+      setPromptInput(
+        voiceSentence || (isMale ? HARDCODED_TEST_LINE_HINDI_MALE : HARDCODED_TEST_LINE_HINDI_FEMALE)
+      );
     } else if (lang === 'en') {
-      setPromptInput(HARDCODED_TEST_LINE_ENGLISH);
+      const voiceSentence = activeVoice?.hardcodedTestSentence?.en;
+      setPromptInput(voiceSentence || HARDCODED_TEST_LINE_ENGLISH);
     } else if (lang === 'bn') {
-      setPromptInput(HARDCODED_TEST_LINE_BENGALI);
-      // Ensure selected voice supports Bengali (rishi or suhana)
-      if (selectedVoiceName !== 'rishi' && selectedVoiceName !== 'suhana') {
-        setSelectedVoiceName('rishi');
-      }
+      const voiceSentence = activeVoice?.hardcodedTestSentence?.bn;
+      setPromptInput(voiceSentence || HARDCODED_TEST_LINE_BENGALI);
     }
   };
 
@@ -304,7 +382,7 @@ export const TTSGenerator: React.FC<TTSGeneratorProps> = ({
                 <button
                   key={voice.id}
                   id={`voice-btn-${voice.apiVoiceName}`}
-                  onClick={() => setSelectedVoiceName(voice.apiVoiceName)}
+                  onClick={() => handleVoiceSelect(voice)}
                   className={`text-left p-2.5 rounded-xl border transition-all relative ${
                     isSelected
                       ? 'border-[#0084FF] bg-sky-50/70 ring-2 ring-[#0084FF]/20 shadow-xs'
@@ -503,7 +581,7 @@ export const TTSGenerator: React.FC<TTSGeneratorProps> = ({
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
           <span>
-            Target Voice: <strong className="text-slate-800 capitalize">{selectedVoiceName}</strong> ({selectedLanguage.toUpperCase()})
+            Target Voice: <strong className="text-slate-800 capitalize">{selectedVoiceObj?.displayName || selectedVoiceName}</strong> ({selectedLanguage.toUpperCase()} • {selectedVoiceObj?.gender || 'Voice'})
           </span>
           <span className="hidden sm:inline text-slate-300">•</span>
           <span className="hidden sm:inline">24 kHz High-Res PCM</span>
