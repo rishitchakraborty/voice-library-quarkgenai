@@ -124,7 +124,7 @@ export const LibrarySearchFilter: React.FC<LibrarySearchFilterProps> = ({
       {/* Language & Voice Dropdowns */}
       <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 mb-3">
         {/* Language Tabs */}
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <span className="text-xs text-slate-500 font-medium mr-1">Language:</span>
           <button
             onClick={() => onLanguageChange('all')}
@@ -140,13 +140,13 @@ export const LibrarySearchFilter: React.FC<LibrarySearchFilterProps> = ({
             <button
               key={lang.code}
               onClick={() => onLanguageChange(lang.code)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
                 selectedLanguage === lang.code
                   ? 'bg-[#0084FF] text-white font-semibold shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              <span className="mr-1">{lang.flag}</span>
+              <span>{lang.flag}</span>
               <span>{lang.name}</span>
             </button>
           ))}
@@ -159,12 +159,12 @@ export const LibrarySearchFilter: React.FC<LibrarySearchFilterProps> = ({
             id="library-voice-filter-select"
             value={selectedVoice}
             onChange={(e) => onVoiceChange(e.target.value)}
-            className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:border-[#0084FF] capitalize cursor-pointer"
+            className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:border-[#0084FF] cursor-pointer"
           >
-            <option value="all">All Voices</option>
+            <option value="all">All Voices (12)</option>
             {VOICE_PROFILES.map((v) => (
               <option key={v.apiVoiceName} value={v.apiVoiceName}>
-                {v.displayName} ({v.gender.charAt(0)})
+                {v.displayName} ({v.gender} • {v.category})
               </option>
             ))}
           </select>

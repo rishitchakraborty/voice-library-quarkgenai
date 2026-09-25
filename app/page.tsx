@@ -20,7 +20,7 @@ import {
   ShieldAlert,
   Lock,
 } from 'lucide-react';
-import { AudioClip, AppSettings } from '@/lib/types';
+import { AudioClip, AppSettings, SupportedLanguage } from '@/lib/types';
 import {
   getStoredClips,
   saveStoredClips,
@@ -91,7 +91,7 @@ export default function VoiceLibraryPage() {
   const [isRecorderOpen, setIsRecorderOpen] = useState(false);
   const [externalVoiceSelection, setExternalVoiceSelection] = useState<{
     voiceName: string;
-    language: 'hi' | 'en' | 'bn';
+    language: SupportedLanguage;
     promptText: string;
   } | null>(null);
 
@@ -696,7 +696,7 @@ export default function VoiceLibraryPage() {
         onSelectVoiceForTest={(voiceName, lang, testLine) => {
           setExternalVoiceSelection({
             voiceName,
-            language: lang as 'hi' | 'en' | 'bn',
+            language: lang,
             promptText: testLine,
           });
           window.scrollTo({ top: 0, behavior: 'smooth' });

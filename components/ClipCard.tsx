@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AudioClip } from '@/lib/types';
 import { WaveformPlayer } from './WaveformPlayer';
+import { VOICE_PROFILES, ACTIVE_LANGUAGES } from '@/lib/voice-data';
 
 interface ClipCardProps {
   clip: AudioClip;
@@ -62,6 +63,11 @@ export const ClipCard: React.FC<ClipCardProps> = ({
 
   const fileSizeKb = Math.round((clip.fileSizeBytes || 200000) / 1024);
 
+  const voiceProfile = VOICE_PROFILES.find(
+    (v) => v.apiVoiceName.toLowerCase() === clip.voiceName.toLowerCase()
+  );
+  const langInfo = ACTIVE_LANGUAGES.find((l) => l.code === clip.language);
+
   return (
     <div
       id={`clip-card-${clip.id}`}
@@ -71,25 +77,25 @@ export const ClipCard: React.FC<ClipCardProps> = ({
       <div>
         <div className="flex items-start justify-between gap-3 mb-2.5">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wider ${
-                  clip.language === 'hi'
-                    ? 'bg-sky-50 text-sky-800 border border-sky-200'
-                    : clip.language === 'bn'
-                    ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
-                    : 'bg-purple-50 text-purple-800 border border-purple-200'
-                }`}
-              >
-                {clip.language === 'hi'
-                  ? '🇮🇳 Hindi'
-                  : clip.language === 'bn'
-                  ? '🇮🇳 Bengali'
-                  : '🌐 English'}
+            <div className="flex items-center flex-wrap gap-1.5 mb-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+                <span>{langInfo?.flag || '🌐'}</span>
+                <span>{langInfo?.name || clip.language.toUpperCase()}</span>
               </span>
 
+              {voiceProfile && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className={voiceProfile.gender === 'Female' ? 'text-pink-600 font-bold' : 'text-blue-600 font-bold'}>
+                    {voiceProfile.gender === 'Female' ? '♀' : '♂'}
+                  </span>
+                  <span>{voiceProfile.displayName}</span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-500 text-[10px]">{voiceProfile.category}</span>
+                </span>
+              )}
+
               <span className="text-[11px] text-stone-500 font-mono">
-                {clip.speed.toFixed(2).replace(/\.00$/, '')}x Speed
+                {clip.speed.toFixed(2).replace(/\.00$/, '')}x
               </span>
 
               {clip.cloudSynced && (
